@@ -26,4 +26,3 @@ jobs:
       - run: npm publish --provenance --access public
         env:
           RELEASE_MODE: 'true'
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -7,7 +7,15 @@ Automate FLUF listings, orders and marketplace events with two n8n nodes:
 
 ## Release status
 
-The FLUF backend is live. This community package is undergoing release acceptance and is **not yet verified by n8n**. n8n Cloud discovery requires separate approval. Check [GitHub releases](https://github.com/FLUF-io/n8n-nodes-fluf-connect/releases) for available installation artifacts.
+The package is [published on npm](https://www.npmjs.com/package/n8n-nodes-fluf-connect) and the FLUF backend is live. It is **not yet verified by n8n**; n8n Cloud availability requires separate approval.
+
+## Install on self-hosted n8n
+
+1. Open **Settings → Community nodes → Install** in your n8n instance.
+2. Enter `n8n-nodes-fluf-connect`, review the community-node notice, and install.
+3. Add **FLUF Connect** or **FLUF Connect Trigger** to your workflow.
+
+Your n8n administrator must allow unverified community nodes. This installation method is for self-hosted n8n; the package is not yet available in n8n Cloud.
 
 ## Run locally
 
@@ -20,7 +28,7 @@ npm run lint
 npm run dev
 ```
 
-`n8n-node dev` starts n8n with this package loaded. For a standalone artifact, run `npm pack`; install the resulting tarball in your self-hosted n8n community-node directory (`~/.n8n/nodes`), then restart n8n. The package name is `n8n-nodes-fluf-connect`; do not search for a public npm release until publication is confirmed.
+`n8n-node dev` starts n8n with this package loaded. For a standalone artifact, run `npm pack`; install the resulting tarball in your self-hosted n8n community-node directory (`~/.n8n/nodes`), then restart n8n. The package name is `n8n-nodes-fluf-connect`.
 
 ## Connect FLUF
 
