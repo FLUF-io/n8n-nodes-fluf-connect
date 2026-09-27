@@ -1,0 +1,55 @@
+{
+  "name": "n8n-nodes-fluf-connect",
+  "version": "0.1.0",
+  "description": "FLUF Connect listing, order and marketplace event automation for n8n",
+  "license": "MIT",
+  "homepage": "https://fluf.io/connect",
+  "keywords": [
+    "n8n-community-node-package"
+  ],
+  "author": {
+    "name": "FLUF.io",
+    "email": "info@fluf.io"
+  },
+  "files": [
+    "dist",
+    "examples"
+  ],
+  "scripts": {
+    "build": "n8n-node build",
+    "dev": "n8n-node dev",
+    "lint": "n8n-node lint",
+    "lint:fix": "n8n-node lint --fix",
+    "test": "npm run build && node --test test/*.test.cjs",
+    "prepublishOnly": "n8n-node prerelease"
+  },
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "strict": true,
+    "credentials": [
+      "dist/credentials/FlufConnectApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/FlufConnect/FlufConnect.node.js",
+      "dist/nodes/FlufConnect/FlufConnectTrigger.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@n8n/node-cli": "0.49.1",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FLUF-io/n8n-nodes-fluf-connect.git"
+  },
+  "bugs": {
+    "url": "https://github.com/FLUF-io/n8n-nodes-fluf-connect/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

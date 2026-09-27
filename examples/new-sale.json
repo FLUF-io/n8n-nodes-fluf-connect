@@ -1,0 +1,25 @@
+{
+  "name": "FLUF Connect — inspect new sales",
+  "nodes": [
+    {
+      "parameters": { "event": "new_sale" },
+      "id": "f478f960-f9c8-4eab-a696-716b324fe061",
+      "name": "FLUF Connect Trigger",
+      "type": "n8n-nodes-fluf-connect.flufConnectTrigger",
+      "typeVersion": 1,
+      "position": [260, 300],
+      "webhookId": "ceccf22a-3c43-407f-bb41-17d50396d209"
+    },
+    {
+      "parameters": {},
+      "id": "a354b2e2-a54e-4b83-a2e0-81261b85db3a",
+      "name": "Inspect sale payload",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [520, 300]
+    }
+  ],
+  "connections": { "FLUF Connect Trigger": { "main": [[{ "node": "Inspect sale payload", "type": "main", "index": 0 }]] } },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}
