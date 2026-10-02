@@ -1,0 +1,372 @@
+{
+  "name": "FLUF \u2014 approved spreadsheet rows to drafts",
+  "nodes": [
+    {
+      "name": "Run approved imports",
+      "type": "n8n-nodes-base.manualTrigger",
+      "parameters": {},
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 1,
+      "id": "9e2bc0aa-6d8f-48dd-8043-975b66341531"
+    },
+    {
+      "name": "Read stock sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Stock",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "position": [
+        460,
+        300
+      ],
+      "typeVersion": 4.7,
+      "id": "09910ded-b30f-41b1-ad42-27b087f71aa5"
+    },
+    {
+      "name": "Validate approved rows",
+      "type": "n8n-nodes-base.code",
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst seen = new Set();\nfor (const {json:r} of rows) { const sku=String(r.sku ?? '').trim(); if(sku && seen.has(sku)) throw new Error('Duplicate SKU in Stock sheet: '+sku); if(sku) seen.add(sku); }\nreturn rows.flatMap((item,i) => {\n const r=item.json;\n if(String(r.approved ?? '').trim().toLowerCase() !== 'yes' || String(r.fluf_listing_id ?? '').trim()) return [];\n const sku=String(r.sku ?? '').trim(), title=String(r.title ?? '').trim(), price=Number(r.price);\n if(sku !== String(r.sku ?? '')) throw new Error('Remove leading or trailing spaces from SKU '+sku+' before importing.');\n if(!sku || !title || !Number.isFinite(price) || price<=0) throw new Error('Approved rows need a SKU, title and positive numeric price.');\n return [{json:{sku,title,price},pairedItem:{item:i}}];\n});"
+      },
+      "position": [
+        680,
+        300
+      ],
+      "typeVersion": 2,
+      "id": "0756ff47-5a9d-4fd6-a161-cb9835a286d8"
+    },
+    {
+      "name": "One row at a time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "position": [
+        900,
+        300
+      ],
+      "typeVersion": 3,
+      "id": "b22950ae-523b-4ba2-a271-b6f4aa86d7e8"
+    },
+    {
+      "name": "Find existing SKU",
+      "type": "n8n-nodes-fluf-connect.flufConnect",
+      "parameters": {
+        "resource": "listing",
+        "operation": "findListing",
+        "sku": "={{ $json.sku }}"
+      },
+      "position": [
+        1120,
+        300
+      ],
+      "typeVersion": 1,
+      "id": "80dbc4a7-e4a5-443b-9322-3482b384aa12",
+      "alwaysOutputData": true
+    },
+    {
+      "name": "Decide next step",
+      "type": "n8n-nodes-base.code",
+      "parameters": {
+        "jsCode": "const row=$('One row at a time').item.json;\nconst matches=$input.all().map(i=>i.json).filter(r=>r.id);\nreturn [{json:{...row, fluf_listing_id:matches[0]?.id ?? '', import_status:matches.length ? 'existing' : 'created'},pairedItem:{item:0}}];"
+      },
+      "position": [
+        1340,
+        300
+      ],
+      "typeVersion": 2,
+      "id": "418508d9-6138-490e-abde-a0e74ae863ec"
+    },
+    {
+      "name": "Already exists",
+      "type": "n8n-nodes-base.if",
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b1ba75f6-9b8c-42f9-9784-a6ea2916e651",
+              "leftValue": "={{ String($json.fluf_listing_id) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "position": [
+        1560,
+        300
+      ],
+      "typeVersion": 2.2,
+      "id": "cb195d11-13b1-45c3-9785-2b3124e87f9b"
+    },
+    {
+      "name": "Create FLUF draft",
+      "type": "n8n-nodes-fluf-connect.flufConnect",
+      "parameters": {
+        "resource": "listing",
+        "operation": "createListing",
+        "title": "={{ $json.title }}",
+        "price": "={{ $json.price }}",
+        "additionalFields": {
+          "sku": "={{ $json.sku }}",
+          "quantity": 0
+        }
+      },
+      "position": [
+        1780,
+        300
+      ],
+      "typeVersion": 1,
+      "id": "7a487dc1-dd7d-4607-97fa-aee4b2b9475a"
+    },
+    {
+      "name": "Keep created ID",
+      "type": "n8n-nodes-base.code",
+      "parameters": {
+        "jsCode": "const result=$input.first().json;\nif(!result.id) throw new Error('No listing ID returned. Check FLUF before retrying.');\nreturn [{json:{...$('Decide next step').item.json,fluf_listing_id:result.id},pairedItem:{item:0}}];"
+      },
+      "position": [
+        2000,
+        300
+      ],
+      "typeVersion": 2,
+      "id": "97f0be36-3c7b-4062-a9f4-8ab7da8bef3a"
+    },
+    {
+      "name": "Record result in Stock",
+      "type": "n8n-nodes-base.googleSheets",
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Stock",
+          "mode": "name"
+        },
+        "options": {
+          "cellFormat": "RAW"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sku": "={{ $json.sku }}",
+            "fluf_listing_id": "={{ $json.fluf_listing_id }}",
+            "import_status": "={{ $json.import_status }}"
+          },
+          "matchingColumns": [
+            "sku"
+          ],
+          "schema": [
+            {
+              "id": "sku",
+              "displayName": "sku",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fluf_listing_id",
+              "displayName": "fluf_listing_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "import_status",
+              "displayName": "import_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "position": [
+        2220,
+        300
+      ],
+      "typeVersion": 4.7,
+      "id": "3a5bfc3e-df85-4769-a386-30493cbcc21a"
+    },
+    {
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "parameters": {
+        "content": "## Review before importing\nCreate a Stock tab: sku, title, price, approved, fluf_listing_id, import_status. Set approved to yes for reviewed rows. Select credentials and the same spreadsheet ID in BOTH Sheets nodes.\nRun once at a time. Creates zero-stock FLUF drafts; does not publish to marketplaces. Existing SKUs are recorded without changes. Review the result before crosslisting.\nhttps://fluf.io/support/connect-n8n/#drafts",
+        "height": 240,
+        "width": 700
+      },
+      "position": [
+        240,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "5e353a0f-7f96-4fd7-b6f1-ddfd52b0d09f"
+    }
+  ],
+  "connections": {
+    "Run approved imports": {
+      "main": [
+        [
+          {
+            "node": "Read stock sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read stock sheet": {
+      "main": [
+        [
+          {
+            "node": "Validate approved rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate approved rows": {
+      "main": [
+        [
+          {
+            "node": "One row at a time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One row at a time": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Find existing SKU",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find existing SKU": {
+      "main": [
+        [
+          {
+            "node": "Decide next step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decide next step": {
+      "main": [
+        [
+          {
+            "node": "Already exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already exists": {
+      "main": [
+        [
+          {
+            "node": "Record result in Stock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create FLUF draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create FLUF draft": {
+      "main": [
+        [
+          {
+            "node": "Keep created ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep created ID": {
+      "main": [
+        [
+          {
+            "node": "Record result in Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record result in Stock": {
+      "main": [
+        [
+          {
+            "node": "One row at a time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

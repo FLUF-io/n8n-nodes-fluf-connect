@@ -7,15 +7,19 @@ Automate FLUF listings, orders and marketplace events with two n8n nodes:
 
 ## Release status
 
-The package is [published on npm](https://www.npmjs.com/package/n8n-nodes-fluf-connect) and the FLUF backend is live. It is **not yet verified by n8n**; n8n Cloud availability requires separate approval.
+The package is [published on npm](https://www.npmjs.com/package/n8n-nodes-fluf-connect) and the FLUF backend is live. It is **verified by n8n**. See the [seller landing page](https://fluf.io/integrations/n8n/) and [setup tutorial](https://fluf.io/support/connect-n8n/).
 
-## Install on self-hosted n8n
+## Install
+
+Search your n8n node picker for **FLUF Connect** and install it if offered. Workspace catalogue availability depends on n8n and your administrator settings.
+
+### Self-hosted n8n
 
 1. Open **Settings → Community nodes → Install** in your n8n instance.
 2. Enter `n8n-nodes-fluf-connect`, review the community-node notice, and install.
 3. Add **FLUF Connect** or **FLUF Connect Trigger** to your workflow.
 
-Your n8n administrator must allow unverified community nodes. This installation method is for self-hosted n8n; the package is not yet available in n8n Cloud.
+Your n8n administrator must allow community-node installation.
 
 ## Run locally
 
@@ -68,6 +72,10 @@ To test without creating a sale, use the webhook's **Test** action in FLUF's dev
 Import [the example workflow](examples/new-sale.json), select your credential, and listen for a **New Sale** event. It retains the payload for inspection without contacting another app. Add Google Sheets, email, accounting or other n8n nodes afterwards.
 
 To disconnect, deactivate the workflows first so their webhooks are deleted, then revoke the personal token in FLUF. Revoking a token alone does not remove independently stored webhook subscriptions. Signing secrets are stored in n8n workflow static data; handle workflow exports and database backups accordingly.
+
+## Ready-to-use templates
+
+See [examples](examples/README.md) for a Google Sheets sales ledger, approved sheet rows to FLUF drafts, and a private read-only inventory assistant. Each export is inactive and contains no credentials. Follow the [full tutorial](https://fluf.io/support/connect-n8n/) before activating it.
 
 ## Development and checks
 

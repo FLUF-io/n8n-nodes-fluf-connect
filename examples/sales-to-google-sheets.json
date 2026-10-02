@@ -1,0 +1,204 @@
+{
+  "name": "FLUF \u2014 sales ledger in Google Sheets",
+  "nodes": [
+    {
+      "name": "New FLUF sale",
+      "type": "n8n-nodes-fluf-connect.flufConnectTrigger",
+      "parameters": {
+        "event": "new_sale"
+      },
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 1,
+      "id": "c4be2888-1f8f-4053-8241-3c243764f149",
+      "webhookId": "2f0a04f8-4eb7-4d12-9611-a56905802c84"
+    },
+    {
+      "name": "Prepare sale row",
+      "type": "n8n-nodes-base.code",
+      "parameters": {
+        "jsCode": "return $input.all().map((item, i) => {\n const s = item.json;\n if (s.test || s.synthetic || !s.event_id || !s.order_id || !s.channel) throw new Error('Use a real sale with event_id, order_id and channel.');\n return {json: {event_id: String(s.event_id), order_id: String(s.order_id), channel: s.channel, connection_id: String(s.connection_id ?? ''), sold_at: s.sold_at ?? '', order_total: s.order_total ?? '', currency: s.currency ?? '', item_count: Array.isArray(s.items) ? s.items.length : '', items: JSON.stringify(s.items ?? [])}, pairedItem: {item: i}};\n});"
+      },
+      "position": [
+        480,
+        300
+      ],
+      "typeVersion": 2,
+      "id": "b13ca400-afa6-42c0-a891-b30eaa440f06"
+    },
+    {
+      "name": "Save sale in Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "parameters": {
+        "resource": "sheet",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sales",
+          "mode": "name"
+        },
+        "options": {
+          "cellFormat": "RAW"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $json.event_id }}",
+            "order_id": "={{ $json.order_id }}",
+            "channel": "={{ $json.channel }}",
+            "connection_id": "={{ $json.connection_id }}",
+            "sold_at": "={{ $json.sold_at }}",
+            "order_total": "={{ $json.order_total }}",
+            "currency": "={{ $json.currency }}",
+            "item_count": "={{ $json.item_count }}",
+            "items": "={{ $json.items }}"
+          },
+          "matchingColumns": [
+            "event_id"
+          ],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "channel",
+              "displayName": "channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "connection_id",
+              "displayName": "connection_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sold_at",
+              "displayName": "sold_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "order_total",
+              "displayName": "order_total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "item_count",
+              "displayName": "item_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "items",
+              "displayName": "items",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "position": [
+        720,
+        300
+      ],
+      "typeVersion": 4.7,
+      "id": "13e13735-06b6-4cc4-b8fc-b8ad37d9ca75"
+    },
+    {
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "parameters": {
+        "content": "## Sales ledger\nSelect your FLUF and Google credentials. Create a Sales tab with these headers:\nevent_id, order_id, channel, connection_id, sold_at, order_total, currency, item_count, items\nSet the spreadsheet ID on the Sheets node. Test with a real sale. Upserts match event_id; concurrent deliveries can still race in Sheets. Use a database unique key for strict deduplication. See https://fluf.io/support/connect-n8n/#sales",
+        "height": 240,
+        "width": 700
+      },
+      "position": [
+        240,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "05a2322c-20cc-4e23-a97e-fbbbde0a8c7c"
+    }
+  ],
+  "connections": {
+    "New FLUF sale": {
+      "main": [
+        [
+          {
+            "node": "Prepare sale row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare sale row": {
+      "main": [
+        [
+          {
+            "node": "Save sale in Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,9 +1,9 @@
 {
   "name": "n8n-nodes-fluf-connect",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "FLUF Connect listing, order and marketplace event automation for n8n",
   "license": "MIT",
-  "homepage": "https://fluf.io/connect",
+  "homepage": "https://fluf.io/integrations/n8n/",
   "keywords": [
     "n8n-community-node-package"
   ],
